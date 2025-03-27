@@ -1,4 +1,10 @@
-# gcsg
+# Growing Context-Sensitive Grammars Parser
+
+According to the Chomsky hierarchy, Growing context sensitive grammar is a type of context sensitive grammar that the production rule always increase in length.
+The complexity of the membership problem is in polynomial time. But it's very hard to implement even for the most capable AI of 2025.
+In this repository, I try to do just that. Along with the baseline, recursive grammar and context-free grammar.
+
+## Theory
 
 A simplified proof sketch for the polynomial-time membership of growing context-sensitive grammars can be articulated using a dynamic programming framework . Let G = (N, T, S, P) be a GCSG and w be an input string of length n. The goal is to determine if w ∈ L(G). We can employ a table-based approach to keep track of which non-terminal symbols can derive which substrings of w.
 
