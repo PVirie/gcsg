@@ -230,7 +230,6 @@ class Context_Free_Grammar:
         # CYK Algorithm
         L = len(x)
         NT = len(self.non_terminal_set)
-        T = len(self.terminal_set)
         nt_to_index = {nt: i for i, nt in enumerate(self.non_terminal_set)}
         # initialize the table
         table = np.zeros((L, L, NT), dtype=bool)

@@ -11,7 +11,9 @@ class Recursive_Grammar:
         self._reverse_rules = {}
         for nt, productions in rules.items():
             for prod in productions:
-                self._reverse_rules[prod] = nt
+                if prod not in self._reverse_rules:
+                    self._reverse_rules[prod] = []
+                self._reverse_rules[prod].append(nt)
 
     def match(self, x: str, cache=None) -> bool:
         # recursively
@@ -25,9 +27,9 @@ class Recursive_Grammar:
             for j in range(0, i):
                 substr = x[j:i]
                 # n
-                replacement = self._reverse_rules.get(substr)
-                if replacement:
-                    if self.match(x[:j] + replacement + x[i:], cache):
+                replacements = self._reverse_rules.get(substr, [])
+                for r in replacements:
+                    if self.match(x[:j] + r + x[i:], cache):
                         cache[x] = True
                         return True
         cache[x] = False
