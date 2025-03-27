@@ -52,3 +52,16 @@ if __name__ == "__main__":
     assert grammar_4.match("bbbb") == True
 
 
+    # growing context sensitive grammar
+    grammar_5 = grammars.build_grammar({"S", "A", "B"}, {"a", "b", "c"}, "S", {
+        "S": ["aABb", "aa"],
+        "A": ["aABb", "aa"],
+        "B": ["bABc", "bb"],
+        "aAB": ["aBBB"],
+        "bAB": ["bBBB"],
+    })
+
+    assert grammar_5.match("aa") == True
+    assert grammar_5.match("aaabbb") == True
+    assert grammar_5.match("aabbbbbbbbbbbbbbcb") == True
+    assert grammar_5.match("ccccaaaaabbbbbb") == False

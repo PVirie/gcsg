@@ -38,6 +38,40 @@ class Growing_Context_Sensitive_Grammar:
                 break
 
 
+    def can_be(self, vars, i, j, check_table, x):
+        if len(vars) == 0:
+            return True
+        if i < 0 or j >= len(x) or j < i or j - i + 1 < len(vars):
+            return False
+
+        # this is regular expression matching problem, dynamic time warping
+        # assume that the vars contains some non-terminal symbols, replace them in regex with *
+        L = j - i + 1
+        V = len(vars)
+        nt_to_index = {nt: i for i, nt in enumerate(self.non_terminal_set)}
+        table = np.zeros((V, L), dtype=bool)
+
+        if vars[0] in self.non_terminal_set:
+            for l in range(L):
+                table[0, l] = check_table[i, i + l, nt_to_index[vars[0]]]
+        else:
+            table[0, 0] = vars[0] == x[i]
+
+        for v in range(1, V):
+            if vars[v] in self.non_terminal_set:
+                for l in range(v, L):
+                    for k in range(l):
+                        if table[v - 1, k] and check_table[i + k + 1, i + l, nt_to_index[vars[v]]]:
+                            table[v, l] = True
+                            break
+            else:
+                for l in range(v, L):
+                    table[v, l] = table[v - 1, l - 1] and vars[v] == x[i + l]
+            
+        # placeholder
+        return table[V - 1, L - 1]
+
+
 
     def match(self, x: str) -> bool:
         # generalized CYK Algorithm
@@ -57,30 +91,6 @@ class Growing_Context_Sensitive_Grammar:
                         if (x_prefix == p or p == "") and (x_suffix == s or s == ""):
                             table[i, i, nt_to_index[A]] = True
 
-        def can_be(vars, i, j, table, x):
-            if len(vars) == 0:
-                return True
-
-            # if var starts or end with terminal symbol use that to filter
-            for p in range(len(vars)):
-                if vars[p] in self.terminal_set: 
-                    if vars[p] != x[i + p]:
-                        return False
-                else:
-                    break
-
-            for p in range(len(vars) - 1, -1, -1):
-                if vars[p] in self.terminal_set:
-                    if vars[p] != x[j - len(vars) + 1 + p]:
-                        return False
-                else:
-                    break
-
-            # now attempt to align the substring while matching the non-terminal
-            # for example AaaCbbB can be matched with aabb,  aaabbb
-
-            # placeholder
-            return True
 
         for l in range(2, L + 1):
             for i in range(L - l + 1):
@@ -90,7 +100,7 @@ class Growing_Context_Sensitive_Grammar:
                         # check whether p can be a prefix of the substring
                         test = False
                         for k in range(i-len(p), -1, -1):
-                            if can_be(p, k, i-1, table, x):
+                            if self.can_be(p, k, i-1, table, x):
                                 test = True
                                 break
                         if not test:
@@ -99,14 +109,14 @@ class Growing_Context_Sensitive_Grammar:
                         # check whether s can be a suffix of the substring
                         test = False
                         for k in range(j + len(s) - 1, L):
-                            if can_be(s, j, k, table, x):
+                            if self.can_be(s, j, k, table, x):
                                 test = True
                                 break
                         if not test:
                             continue
 
                         # now check whether the B can be the substring
-                        if not can_be(B, i, j - 1, table, x):
+                        if not self.can_be(B, i, j - 1, table, x):
                             continue
 
                         # if all pass then make the table[i, j, nt] to be True
