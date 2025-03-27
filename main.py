@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     # growing context sensitive grammar
     grammar_5 = grammars.build_grammar({"S", "A", "B"}, {"a", "b", "c"}, "S", {
-        "S": ["aABb", "aa"],
+        "S": ["A"],
         "A": ["aABb", "aa"],
         "B": ["bABc", "bb"],
         "aAB": ["aBBB"],

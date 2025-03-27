@@ -3,11 +3,14 @@
 """
 
 import numpy as np
-
+from .utils import UNIT
 
 class Growing_Context_Sensitive_Grammar:
     
     def __init__(self, non_terminal_set, terminal_set, start_symbol, rules: dict):
+
+        non_terminal_set, terminal_set, start_symbol, rules = UNIT(non_terminal_set, terminal_set, start_symbol, rules)
+
         self.non_terminal_set = non_terminal_set
         self.terminal_set = terminal_set
         self.S = start_symbol
@@ -128,8 +131,10 @@ class Growing_Context_Sensitive_Grammar:
     @staticmethod
     def check_grammar(non_terminal_set, terminal_set, start_symbol, rules: dict):
 
-        # first check context sensitive αAβ → αγβ
+        # first check context sensitive αAβ → αγβ, ignore S → *
         for nt, productions in rules.items():
+            if nt == start_symbol:
+                continue
             for prod in productions:
                 prefix = ""
                 suffix = ""

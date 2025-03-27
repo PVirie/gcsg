@@ -10,6 +10,7 @@ def build_grammar(non_terminal_set, terminal_set, start_symbol, rules):
         return Context_Free_Grammar(non_terminal_set, terminal_set, start_symbol, rules)
     if Growing_Context_Sensitive_Grammar.check_grammar(non_terminal_set, terminal_set, start_symbol, rules):
         # matching is polynomial
+        print("Growing Context Sensitive Grammar")
         return Growing_Context_Sensitive_Grammar(non_terminal_set, terminal_set, start_symbol, rules)
     print("Recursive Grammar")
     return Recursive_Grammar(non_terminal_set, terminal_set, start_symbol, rules)
