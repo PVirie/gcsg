@@ -237,9 +237,9 @@ class Context_Free_Grammar:
         for i in range(L):
             for nt, productions in self.rules.items():
                 for prod in productions:
-                    if len(prod) == 1 and prod[0] in self.terminal_set:
-                        if prod[0] == x[i]:
-                            table[i, i, nt_to_index[nt]] = True
+                    if len(prod) == 1 and prod[0] in self.terminal_set and prod[0] == x[i]:
+                        table[i, i, nt_to_index[nt]] = True
+                        
         for l in range(2, L + 1):
             for i in range(L - l + 1):
                 j = i + l

@@ -32,82 +32,121 @@ class Growing_Context_Sensitive_Grammar:
                 self.rules[lhs].append((prefix, lhs[len(prefix):(len(lhs) - len(suffix))], rhs[len(prefix):(len(rhs) - len(suffix))], suffix))
                 
         self.has_epsilon_rule = False
-        for p, a, b, s in self.rules[self.S]:
-            if b == "":
+        for p, A, B, s in self.rules[self.S]:
+            if B == "":
                 self.has_epsilon_rule = True
                 break
 
 
-    def try_replace(self, x, reachable_set):
-        # for all non-terminal symbol in x, try to replace it with reachable_set
-        if len(x) == 0:
-            yield ""
-        else:
-            # recursive
-            for i in range(1, len(x) + 1):
-                if x[:i] in self.non_terminal_set:
-                    for replacement in reachable_set[x[:i]]:
-                        for suffix in self.try_replace(x[i:], reachable_set):
-                            yield replacement + suffix
-                    break
-                else:
-                    if x[:i] in self.terminal_set:
-                        for suffix in self.try_replace(x[i:], reachable_set):
-                            yield x[:i] + suffix
-                    else:
-                        break
-
-
-    def compute_possible_source(self, lhs, rhs, target, reachable_set):
-        # compute possible lhs of a given production rule
-        # lhs -> rhs which may contain non-terminal
-        # the goal is to match target
-        # rhs = (prefix, a, b, suffix)
-        prefix, center_a, center_b, suffix = rhs
-        for p in self.try_replace(prefix, reachable_set):
-            for b in self.try_replace(center_b, reachable_set):
-                for s in self.try_replace(suffix, reachable_set):
-                    if p + b + s == target:
-                        for a in self.try_replace(center_a, reachable_set):
-                            yield p + a + s
-
 
     def match(self, x: str) -> bool:
-        # matching is polynomial
+        # generalized CYK Algorithm
         L = len(x)
-        N = len(self.non_terminal_set)
-        reachable_set = {}
-        for nt in self.non_terminal_set:
-            reachable_set[nt] = set()
-            
-        if L == 0:
-            return self.has_epsilon_rule
-        
+        NT = len(self.non_terminal_set)
+        nt_to_index = {nt: i for i, nt in enumerate(self.non_terminal_set)}
+        # initialize the table
+        table = np.zeros((L, L, NT), dtype=bool)
+        # fill the table
         for i in range(L):
-            for nt in self.non_terminal_set:
-                for rule in self.rules[nt]:
-                    if rule[2] == x[i]:
-                        reachable_set[nt].add(x[i])
+            for lhs, productions in self.rules.items():
+                for p, A, B, s in productions:
+                    if B in self.terminal_set and B == x[i]:
+                        # now check context, only for terminal symbols
+                        x_prefix = x[max(i - len(p) + 1, 0):i]
+                        x_suffix = x[i + 1:min(i + len(s) + 1, L)]
+                        if (x_prefix == p or p == "") and (x_suffix == s or s == ""):
+                            table[i, i, nt_to_index[A]] = True
+
+        def can_be(vars, i, j, table, x):
+            if len(vars) == 0:
+                return True
+
+            # if var starts or end with terminal symbol use that to filter
+            for p in range(len(vars)):
+                if vars[p] in self.terminal_set: 
+                    if vars[p] != x[i + p]:
+                        return False
+                else:
+                    break
+
+            for p in range(len(vars) - 1, -1, -1):
+                if vars[p] in self.terminal_set:
+                    if vars[p] != x[j - len(vars) + 1 + p]:
+                        return False
+                else:
+                    break
+
+            # now attempt to align the substring while matching the non-terminal
+            # for example AaaCbbB can be matched with aabb,  aaabbb
+
+            # placeholder
+            return True
 
         for l in range(2, L + 1):
             for i in range(L - l + 1):
                 j = i + l
-                substr = x[i:j]
-                for nt in self.non_terminal_set:
-                    for lhs, rhses in self.rules.items():
-                        for rhs in rhses:
-                            # iterate subset in subset
-                            for lhs_ in self.compute_possible_source(lhs, rhs, substr, reachable_set):
-                                if lhs_ in reachable_set[nt]:
-                                    reachable_set[nt].add(substr)
-                                    break
+                for lhs, productions in self.rules.items():
+                    for p, A, B, s in productions:
+                        # check whether p can be a prefix of the substring
+                        test = False
+                        for k in range(i-len(p), -1, -1):
+                            if can_be(p, k, i-1, table, x):
+                                test = True
+                                break
+                        if not test:
+                            continue
 
-        return x in reachable_set[self.S]
+                        # check whether s can be a suffix of the substring
+                        test = False
+                        for k in range(j + len(s) - 1, L):
+                            if can_be(s, j, k, table, x):
+                                test = True
+                                break
+                        if not test:
+                            continue
+
+                        # now check whether the B can be the substring
+                        if not can_be(B, i, j - 1, table, x):
+                            continue
+
+                        # if all pass then make the table[i, j, nt] to be True
+                        table[i, j - 1, nt_to_index[A]] = True
+
+        return table[0, L - 1, nt_to_index[self.S]]
+    
 
     @staticmethod
     def check_grammar(non_terminal_set, terminal_set, start_symbol, rules: dict):
+
+        # first check context sensitive αAβ → αγβ
         for nt, productions in rules.items():
             for prod in productions:
-                if len(prod) < len(nt):
+                prefix = ""
+                suffix = ""
+                for i in range(min(len(nt), len(prod))):
+                    if nt[i] == prod[i]:
+                        prefix += nt[i]
+                    else:
+                        break
+                for i in range(1, min(len(nt), len(prod)) + 1):
+                    if nt[-i] == prod[-i]:
+                        suffix = nt[-i] + suffix
+                    else:
+                        break
+                if len(prefix) + len(suffix) >= len(nt):
                     return False
+                # now check whether the center is single non-terminal
+                center = nt[len(prefix):(len(nt) - len(suffix))]
+                if len(center) > 1 or center not in non_terminal_set:
+                    return False
+                
+                # now check whether the grammar is non-contracting
+                center_rhs = prod[len(prefix):(len(prod) - len(suffix))]
+                if len(center_rhs) < len(center):
+                    return False
+                
+                # now for growing context sensitive grammar, the center must be growing
+                if len(center_rhs) <= len(center):
+                    return False
+
         return True
