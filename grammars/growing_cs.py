@@ -41,7 +41,7 @@ class Growing_Context_Sensitive_Grammar:
                 break
 
 
-    def can_be(self, vars, i, j, check_table, x):
+    def fit(self, vars, i, j, check_table, x):
         if len(vars) == 0:
             return True
         if i < 0 or j >= len(x) or j < i or j - i + 1 < len(vars):
@@ -103,7 +103,7 @@ class Growing_Context_Sensitive_Grammar:
                         # check whether p can be a prefix of the substring
                         test = False
                         for k in range(i-len(p), -1, -1):
-                            if self.can_be(p, k, i-1, table, x):
+                            if self.fit(p, k, i-1, table, x):
                                 test = True
                                 break
                         if not test:
@@ -112,14 +112,14 @@ class Growing_Context_Sensitive_Grammar:
                         # check whether s can be a suffix of the substring
                         test = False
                         for k in range(j + len(s) - 1, L):
-                            if self.can_be(s, j, k, table, x):
+                            if self.fit(s, j, k, table, x):
                                 test = True
                                 break
                         if not test:
                             continue
 
                         # now check whether the B can be the substring
-                        if not self.can_be(B, i, j - 1, table, x):
+                        if not self.fit(B, i, j - 1, table, x):
                             continue
 
                         # if all pass then make the table[i, j, nt] to be True
