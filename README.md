@@ -24,9 +24,9 @@ Let x be an input string of length n. The goal is to determine if x ∈ L(G), wh
 Consider all possible substrings of x. For each substring and each non-terminal A in N, we want to determine if A can derive that substring.
 For every non-terminal A and every substring y in x, if there is a production rule αAβ → αBβ in P, we need to check three things:
 
-1. Whether the prefix of y fits the left-hand side of the production rule α.
-2. Whether the suffix of y fits the right-hand side of the production rule β.
-3. Whether the B fits the substring y.
+    1. Whether the prefix of y fits the left-hand side of the production rule α.
+    2. Whether the suffix of y fits the right-hand side of the production rule β.
+    3. Whether the B fits the substring y.
 
 If all three conditions are met, we can conclude that A can fit y. We can use a dynamic programming table to keep track of this information.
 
@@ -36,4 +36,4 @@ We can employ another dynamic programming table to sort this out similarly to th
 The crucial aspect here is that because the grammar is growing, we can incrementally do this from the substring of size 2 to the substring of size |x|.
 The reason why we can skip the substring of size 1 is due to the growing property of the grammar. We can use UNIT operation from the conversion to Chomsky normal form to remove any unit production rules from the grammar.
 Finally, we check if the start symbol S fits the entire input string x.
-The algorithm is guaranteed to terminate in polynomial time, and the time complexity is O(n<sup>5</sup>)|P|.
+The algorithm is guaranteed to terminate in polynomial time, and the time complexity is O(n<sup>6</sup>)|P|.

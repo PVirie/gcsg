@@ -41,38 +41,59 @@ class Growing_Context_Sensitive_Grammar:
                 break
 
 
-    def fit(self, vars, i, j, check_table, x):
-        if len(vars) == 0:
-            return True
-        if i < 0 or j >= len(x) or j < i or j - i + 1 < len(vars):
-            return False
-
+    def fit(self, vars, i, j, check_table, x, kleene_prefix=False, kleene_suffix=False):
         # this is regular expression matching problem, dynamic time warping
         # assume that the vars contains some non-terminal symbols, replace them in regex with *
+
+        if len(vars) == 0:
+            return True
+        if i < 0 or j >= len(x) or j < i:
+            return False
+        if  j - i + 1 < len(vars):
+            return False
+
         L = j - i + 1
         V = len(vars)
         nt_to_index = {nt: i for i, nt in enumerate(self.non_terminal_set)}
         table = np.zeros((V, L), dtype=bool)
 
-        if vars[0] in self.non_terminal_set:
-            for l in range(L):
-                table[0, l] = check_table[i, i + l, nt_to_index[vars[0]]]
+        var = vars[0]
+        if kleene_prefix:
+            if var in self.non_terminal_set:
+                for l in range(L):
+                    for k in range(l):
+                        if check_table[i + k + 1, i + l, nt_to_index[var]]:
+                            table[0, l] = True
+                            break
+            else:
+                for l in range(L):
+                    table[0, l] = var == x[i + l]
         else:
-            table[0, 0] = vars[0] == x[i]
+            if var in self.non_terminal_set:
+                for l in range(L):
+                    table[0, l] = check_table[i, i + l, nt_to_index[var]]
+            else:
+                table[0, 0] = var == x[i]
 
         for v in range(1, V):
-            if vars[v] in self.non_terminal_set:
+            var = vars[v]
+            if var in self.non_terminal_set:
                 for l in range(v, L):
                     for k in range(l):
-                        if table[v - 1, k] and check_table[i + k + 1, i + l, nt_to_index[vars[v]]]:
+                        if table[v - 1, k] and check_table[i + k + 1, i + l, nt_to_index[var]]:
                             table[v, l] = True
                             break
             else:
                 for l in range(v, L):
-                    table[v, l] = table[v - 1, l - 1] and vars[v] == x[i + l]
-            
-        # placeholder
-        return table[V - 1, L - 1]
+                    table[v, l] = table[v - 1, l - 1] and var == x[i + l]
+
+        if kleene_suffix:
+            for l in range(L):
+                if table[V - 1, l]:
+                    return True
+            return False
+        else:
+            return table[V - 1, L - 1]
 
 
 
@@ -97,35 +118,25 @@ class Growing_Context_Sensitive_Grammar:
 
         for l in range(2, L + 1):
             for i in range(L - l + 1):
-                j = i + l
+                j = i + l - 1
                 for lhs, productions in self.rules.items():
                     for p, A, B, s in productions:
                         # check whether p can be a prefix of the substring
-                        test = False
-                        for k in range(i-len(p), -1, -1):
-                            if self.fit(p, k, i-1, table, x):
-                                test = True
-                                break
-                        if not test:
+                        if not self.fit(p, 0, i-1, table, x, kleene_prefix=True):
                             continue
 
                         # check whether s can be a suffix of the substring
-                        test = False
-                        for k in range(j + len(s) - 1, L):
-                            if self.fit(s, j, k, table, x):
-                                test = True
-                                break
-                        if not test:
+                        if not self.fit(s, j+1, L-1, table, x, kleene_suffix=True):
                             continue
 
                         # now check whether the B can be the substring
-                        if not self.fit(B, i, j - 1, table, x):
+                        if not self.fit(B, i, j, table, x):
                             continue
 
                         # if all pass then make the table[i, j, nt] to be True
-                        table[i, j - 1, nt_to_index[A]] = True
+                        table[i, j, nt_to_index[A]] = True
 
-        return table[0, L - 1, nt_to_index[self.S]]
+        return table[0, L-1, nt_to_index[self.S]]
     
 
     @staticmethod
